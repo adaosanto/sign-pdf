@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  pdf-signer:
+    build: .
+    container_name: pdf-signer-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MAX_FILE_SIZE=10485760
+      - UPLOAD_PATH=./uploads
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Servidor web simples para servir a interface de exemplo
+  nginx:
+    image: nginx:alpine
+    container_name: pdf-signer-web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./examples:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - pdf-signer
+    restart: unless-stopped
+    only_if: nginx.conf
