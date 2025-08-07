@@ -26,7 +26,7 @@ class PDFService {
       // Obter todas as páginas
       const pages = pdfDoc.getPages();
       if (pages.length === 0) {
-        throw new Error('PDF não contém páginas');
+        throw new Error('PDF nao contem paginas');
       }
 
       // Gerar assinatura digital URL-safe de 32 caracteres
@@ -71,7 +71,7 @@ class PDFService {
         });
 
         // Adicionar informações da página
-        page.drawText(`Página ${pageIndex + 1} de ${pages.length}`, {
+        page.drawText(`Pagina ${pageIndex + 1} de ${pages.length}`, {
           x: signatureX,
           y: signatureY - 15,
           size: 7,
@@ -637,6 +637,138 @@ class PDFService {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const baseName = path.basename(originalName, '.pdf');
     return `${baseName}-signed-${timestamp}.pdf`;
+  }
+
+  /**
+   * Gera um PDF de exemplo com dados fornecidos via GET
+   * @param {Object} signatureData - Dados da assinatura
+   * @returns {Promise<Buffer>} - PDF gerado como buffer
+   */
+  async generateSamplePDF(signatureData = {}) {
+    try {
+      // Criar novo documento PDF
+      const pdfDoc = await PDFDocument.create();
+
+      // Criar página A4
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const { width, height } = page.getSize();
+
+      // Carregar fontes
+      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+
+      // Gerar assinatura digital
+      const digitalSignature = this.generateURLSafeSignature(32);
+      const documentHash = this.generateDocumentHash(Buffer.from('sample-pdf-content'));
+
+      // Configurações padrão
+      const defaultSignature = {
+        name: signatureData.name || 'Assinatura Digital',
+        date: signatureData.date || new Date().toLocaleDateString('pt-BR'),
+        reason: signatureData.reason || 'Documento aprovado',
+        location: signatureData.location || 'Brasil',
+        position: signatureData.position || { x: 50, y: 100 },
+        fontSize: signatureData.fontSize || 12,
+        originalFileName: signatureData.originalFileName || 'Documento PDF',
+        email: signatureData.email || 'assinatura@digital.com'
+      };
+
+      // Título do documento
+      page.drawText(defaultSignature.originalFileName, {
+        x: 50,
+        y: height - 100,
+        size: 20,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      // Conteúdo do documento
+      page.drawText('Este e um documento de exemplo gerado via API GET.', {
+        x: 50,
+        y: height - 150,
+        size: 14,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, {
+        x: 50,
+        y: height - 180,
+        size: 12,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5)
+      });
+
+      // Assinatura principal
+      const signatureWidth = 350;
+      const signatureHeight = 100;
+      const mainSignatureX = defaultSignature.position.x;
+      const mainSignatureY = height - 300;
+
+      // Retângulo de fundo da assinatura
+      page.drawRectangle({
+        x: mainSignatureX - 10,
+        y: mainSignatureY - 10,
+        width: signatureWidth + 20,
+        height: signatureHeight + 20,
+        borderWidth: 2,
+        borderColor: rgb(0, 0, 0),
+        color: rgb(0.95, 0.95, 0.95)
+      });
+
+      // Informações da assinatura
+      page.drawText(`Assinado por: ${defaultSignature.name}`, {
+        x: mainSignatureX,
+        y: mainSignatureY + 70,
+        size: defaultSignature.fontSize,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`Data: ${defaultSignature.date}`, {
+        x: mainSignatureX,
+        y: mainSignatureY + 50,
+        size: defaultSignature.fontSize - 2,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`Motivo: ${defaultSignature.reason}`, {
+        x: mainSignatureX,
+        y: mainSignatureY + 30,
+        size: defaultSignature.fontSize - 2,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`Local: ${defaultSignature.location}`, {
+        x: mainSignatureX,
+        y: mainSignatureY + 10,
+        size: defaultSignature.fontSize - 2,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      // Assinatura digital
+      page.drawText(`Assinatura Digital: ${digitalSignature}`, {
+        x: 20,
+        y: 30,
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3)
+      });
+
+      // Adicionar página de validação
+      await this.addValidationPage(pdfDoc, defaultSignature, digitalSignature, documentHash);
+
+      // Salvar e retornar
+      const pdfBytes = await pdfDoc.save();
+      return Buffer.from(pdfBytes);
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF de exemplo:', error);
+      throw new Error(`Falha ao gerar PDF de exemplo: ${error.message}`);
+    }
   }
 }
 

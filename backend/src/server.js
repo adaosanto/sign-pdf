@@ -8,6 +8,7 @@ require('dotenv').config();
 const pdfRoutes = require('./routes/pdfRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 const { getCorsConfigByEnvironment } = require('./config/cors');
+const PDFService = require('./services/pdfService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -93,6 +94,50 @@ app.get('/validate', (req, res) => {
   });
 });
 
+// Rota para gerar PDF via GET com dados na URL
+app.get('/generate-pdf', async (req, res) => {
+  try {
+    const {
+      name = 'Assinatura Digital',
+      email = 'assinatura@digital.com',
+      date,
+      reason = 'Documento aprovado',
+      location = 'Brasil',
+      title = 'Documento PDF',
+      fontSize = '12'
+    } = req.query;
+
+    // Criar dados da assinatura
+    const signatureData = {
+      name: decodeURIComponent(name),
+      email: decodeURIComponent(email),
+      date: date || new Date().toLocaleDateString('pt-BR'),
+      reason: decodeURIComponent(reason),
+      location: decodeURIComponent(location),
+      originalFileName: decodeURIComponent(title),
+      fontSize: parseInt(fontSize)
+    };
+
+    // Criar um PDF de exemplo com os dados fornecidos
+    const pdfBuffer = await PDFService.generateSamplePDF(signatureData);
+
+    // Configurar headers para exibição no navegador
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="documento-assinado.pdf"');
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Enviar o PDF
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    res.status(500).json({
+      error: 'Erro ao gerar PDF',
+      message: error.message
+    });
+  }
+});
+
 // Rota para informações da API
 app.get('/api', (req, res) => {
   res.json({
@@ -104,6 +149,7 @@ app.get('/api', (req, res) => {
       signPdf: '/api/pdf/sign',
       uploadPdf: '/api/pdf/upload',
       validate: '/validate',
+      generatePdf: '/generate-pdf',
       apiInfo: '/api/pdf/info'
     }
   });

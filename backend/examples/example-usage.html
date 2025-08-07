@@ -357,17 +357,25 @@
 
                 showProgress(100);
 
-                // Criar link para download
+                // Criar URL do blob e abrir em nova aba
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `documento-assinado-${new Date().toISOString().split('T')[0]}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
 
-                showStatus('PDF assinado com sucesso! Faça o download do arquivo.', 'success');
+                // Abrir PDF em nova aba
+                const newWindow = window.open(url, '_blank');
+
+                // Se a nova aba foi bloqueada, mostrar mensagem
+                if (!newWindow) {
+                    showStatus('PDF assinado com sucesso! Pop-up bloqueado. Clique aqui para abrir.', 'success');
+                    status.style.cursor = 'pointer';
+                    status.onclick = () => window.open(url, '_blank');
+                } else {
+                    showStatus('PDF assinado com sucesso! Abrindo em nova aba...', 'success');
+                }
+
+                // Limpar URL após um tempo
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 10000);
 
             } catch (error) {
                 console.error('Erro:', error);
