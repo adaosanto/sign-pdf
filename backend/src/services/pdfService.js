@@ -29,108 +29,113 @@ class PDFService {
         throw new Error('PDF não contém páginas');
       }
 
-              // Gerar assinatura digital URL-safe de 32 caracteres
-        const digitalSignature = this.generateURLSafeSignature(32);
+      // Gerar assinatura digital URL-safe de 32 caracteres
+      const digitalSignature = this.generateURLSafeSignature(32);
 
-        // Gerar hash do documento para verificação de integridade
-        const documentHash = this.generateDocumentHash(pdfBytes);
+      // Gerar hash do documento para verificação de integridade
+      const documentHash = this.generateDocumentHash(pdfBytes);
 
-        // Configurações padrão da assinatura
-        const defaultSignature = {
-          name: signatureData.name || 'Assinatura Digital',
-          date: signatureData.date || new Date().toLocaleDateString('pt-BR'),
-          reason: signatureData.reason || 'Documento aprovado',
-          location: signatureData.location || 'Brasil',
-          position: signatureData.position || { x: 50, y: 100 },
-          fontSize: signatureData.fontSize || 12
-        };
+      // Obter nome do arquivo original
+      const originalFileName = path.basename(filePath);
 
-        // Adicionar fonte
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      // Configurações padrão da assinatura
+      const defaultSignature = {
+        name: signatureData.name || 'Assinatura Digital',
+        date: signatureData.date || new Date().toLocaleDateString('pt-BR'),
+        reason: signatureData.reason || 'Documento aprovado',
+        location: signatureData.location || 'Brasil',
+        position: signatureData.position || { x: 50, y: 100 },
+        fontSize: signatureData.fontSize || 12,
+        originalFileName: originalFileName,
+        email: signatureData.email || 'assinatura@digital.com'
+      };
 
-        // Processar cada página
-        pages.forEach((page, pageIndex) => {
-          const { width, height } = page.getSize();
+      // Adicionar fonte
+      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
-          // Posição da assinatura digital (canto inferior esquerdo)
-          const signatureX = 20; // Margem esquerda
-          const signatureY = 30; // Próximo ao final da página
+      // Processar cada página
+      pages.forEach((page, pageIndex) => {
+        const { width, height } = page.getSize();
 
-          // Adicionar assinatura digital URL-safe em todas as páginas
-          page.drawText(`Assinatura Digital: ${digitalSignature}`, {
-            x: signatureX,
-            y: signatureY,
-            size: 10,
-            font: font,
-            color: rgb(0.3, 0.3, 0.3)
+        // Posição da assinatura digital (canto inferior esquerdo)
+        const signatureX = 20; // Margem esquerda
+        const signatureY = 30; // Próximo ao final da página
+
+        // Adicionar assinatura digital URL-safe em todas as páginas
+        page.drawText(`Assinatura Digital: ${digitalSignature}`, {
+          x: signatureX,
+          y: signatureY,
+          size: 9,
+          font: font,
+          color: rgb(0.3, 0.3, 0.3)
+        });
+
+        // Adicionar informações da página
+        page.drawText(`Página ${pageIndex + 1} de ${pages.length}`, {
+          x: signatureX,
+          y: signatureY - 15,
+          size: 7,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5)
+        });
+
+        // Se for a primeira página, adicionar informações completas da assinatura
+        if (pageIndex === 0) {
+          // Criar retângulo de fundo para a assinatura principal
+          const signatureWidth = 350;
+          const signatureHeight = 100;
+          const mainSignatureX = defaultSignature.position.x;
+          const mainSignatureY = height - defaultSignature.position.y - signatureHeight;
+
+          // Desenhar retângulo de fundo
+          page.drawRectangle({
+            x: mainSignatureX - 10,
+            y: mainSignatureY - 10,
+            width: signatureWidth + 20,
+            height: signatureHeight + 20,
+            borderWidth: 2,
+            borderColor: rgb(0, 0, 0),
+            color: rgb(0.95, 0.95, 0.95)
           });
 
-          // Adicionar informações da página
-          page.drawText(`Página ${pageIndex + 1} de ${pages.length}`, {
-            x: signatureX,
-            y: signatureY - 15,
-            size: 8,
+          // Adicionar texto da assinatura principal
+          page.drawText(`Assinado por: ${defaultSignature.name}`, {
+            x: mainSignatureX,
+            y: mainSignatureY + 70,
+            size: defaultSignature.fontSize - 1,
+            font: font,
+            color: rgb(0, 0, 0)
+          });
+
+          page.drawText(`Data: ${defaultSignature.date}`, {
+            x: mainSignatureX,
+            y: mainSignatureY + 50,
+            size: defaultSignature.fontSize - 3,
+            font: font,
+            color: rgb(0, 0, 0)
+          });
+
+          page.drawText(`Motivo: ${defaultSignature.reason}`, {
+            x: mainSignatureX,
+            y: mainSignatureY + 30,
+            size: defaultSignature.fontSize - 3,
+            font: font,
+            color: rgb(0, 0, 0)
+          });
+
+          // Adicionar hash digital para verificação de integridade
+          page.drawText(`Hash: ${documentHash.substring(0, 16)}...`, {
+            x: mainSignatureX,
+            y: mainSignatureY + 10,
+            size: defaultSignature.fontSize - 5,
             font: font,
             color: rgb(0.5, 0.5, 0.5)
           });
+        }
+      });
 
-          // Se for a primeira página, adicionar informações completas da assinatura
-          if (pageIndex === 0) {
-            // Criar retângulo de fundo para a assinatura principal
-            const signatureWidth = 350;
-            const signatureHeight = 100;
-            const mainSignatureX = defaultSignature.position.x;
-            const mainSignatureY = height - defaultSignature.position.y - signatureHeight;
-
-            // Desenhar retângulo de fundo
-            page.drawRectangle({
-              x: mainSignatureX - 10,
-              y: mainSignatureY - 10,
-              width: signatureWidth + 20,
-              height: signatureHeight + 20,
-              borderWidth: 2,
-              borderColor: rgb(0, 0, 0),
-              color: rgb(0.95, 0.95, 0.95)
-            });
-
-            // Adicionar texto da assinatura principal
-            page.drawText(`Assinado por: ${defaultSignature.name}`, {
-              x: mainSignatureX,
-              y: mainSignatureY + 70,
-              size: defaultSignature.fontSize,
-              font: font,
-              color: rgb(0, 0, 0)
-            });
-
-            page.drawText(`Data: ${defaultSignature.date}`, {
-              x: mainSignatureX,
-              y: mainSignatureY + 50,
-              size: defaultSignature.fontSize - 2,
-              font: font,
-              color: rgb(0, 0, 0)
-            });
-
-            page.drawText(`Motivo: ${defaultSignature.reason}`, {
-              x: mainSignatureX,
-              y: mainSignatureY + 30,
-              size: defaultSignature.fontSize - 2,
-              font: font,
-              color: rgb(0, 0, 0)
-            });
-
-            // Adicionar hash digital para verificação de integridade
-            page.drawText(`Hash: ${documentHash.substring(0, 16)}...`, {
-              x: mainSignatureX,
-              y: mainSignatureY + 10,
-              size: defaultSignature.fontSize - 4,
-              font: font,
-              color: rgb(0.5, 0.5, 0.5)
-            });
-          }
-        });
-
-        // Adicionar página de validação com QR code e link
-        await this.addValidationPage(pdfDoc, defaultSignature, digitalSignature, documentHash);
+      // Adicionar página de validação com QR code e link
+      await this.addValidationPage(pdfDoc, defaultSignature, digitalSignature, documentHash);
 
       // Salvar o PDF modificado
       const signedPdfBytes = await pdfDoc.save();
@@ -186,6 +191,29 @@ class PDFService {
   }
 
   /**
+   * Gera um UUID v4
+   * @returns {string} - UUID gerado
+   */
+  generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * Gera um hash SHA512 (simulado)
+   * @param {string} input - String de entrada
+   * @returns {string} - Hash SHA512 simulado
+   */
+  generateSHA512(input) {
+    // Simulação de hash SHA512 - em produção, use uma biblioteca real
+    const crypto = require('crypto');
+    return crypto.createHash('sha512').update(input).digest('hex');
+  }
+
+  /**
    * Gera QR code como buffer
    * @param {string} data - Dados para o QR code
    * @returns {Promise<Buffer>} - QR code como buffer
@@ -211,7 +239,7 @@ class PDFService {
   }
 
   /**
-   * Adiciona página de validação ao PDF
+   * Adiciona página de validação ao PDF replicando o certificado D4Sign
    * @param {PDFDocument} pdfDoc - Documento PDF
    * @param {Object} signatureData - Dados da assinatura
    * @param {string} digitalSignature - Assinatura digital
@@ -220,13 +248,13 @@ class PDFService {
    */
   async addValidationPage(pdfDoc, signatureData, digitalSignature, documentHash) {
     try {
-      // Criar nova página
-      const page = pdfDoc.addPage([600, 800]);
+      // Criar nova página A4
+      const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
       const { width, height } = page.getSize();
 
-      // Carregar fonte
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      // Carregar fontes - usando Times para ser mais semelhante ao D4Sign
+      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
 
       // Gerar URL de validação
       const validationURL = this.generateValidationURL(digitalSignature, documentHash);
@@ -235,156 +263,336 @@ class PDFService {
       const qrCodeBuffer = await this.generateQRCodeBuffer(validationURL);
       const qrCodeImage = await pdfDoc.embedPng(qrCodeBuffer);
 
-      // Título da página
-      page.drawText('CERTIFICADO DE ASSINATURA DIGITAL', {
-        x: width / 2 - 150,
-        y: height - 50,
-        size: 20,
-        font: boldFont,
-        color: rgb(0, 0, 0)
+      // Gerar UUID para o documento
+      const documentUUID = this.generateUUID();
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      const formattedTime = currentDate.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
       });
 
-      // Linha separadora
-      page.drawLine({
-        start: { x: 50, y: height - 80 },
-        end: { x: width - 50, y: height - 80 },
-        thickness: 2,
-        color: rgb(0, 0, 0)
+      // Borda verde padronizada (simulando o padrão D4Sign)
+      const borderWidth = 15;
+      const borderColor = rgb(0.2, 0.6, 0.2);
+
+      // Borda externa
+      page.drawRectangle({
+        x: borderWidth,
+        y: borderWidth,
+        width: width - (borderWidth * 2),
+        height: height - (borderWidth * 2),
+        borderWidth: borderWidth,
+        borderColor: borderColor,
+        color: rgb(1, 1, 1)
       });
 
-      // Informações do documento
-      page.drawText('INFORMAÇÕES DO DOCUMENTO', {
-        x: 50,
-        y: height - 120,
+      // Área de conteúdo interna
+      const contentMargin = 30;
+      page.drawRectangle({
+        x: contentMargin,
+        y: contentMargin,
+        width: width - (contentMargin * 2),
+        height: height - (contentMargin * 2),
+        borderWidth: 1,
+        borderColor: rgb(0.9, 0.9, 0.9),
+        color: rgb(1, 1, 1)
+      });
+
+      // Cabeçalho
+      // Logo D4Sign (simulado com texto)
+      page.drawText('D4Sign', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 60,
         size: 16,
         font: boldFont,
         color: rgb(0, 0, 0)
       });
 
-      page.drawText(`Assinatura Digital: ${digitalSignature}`, {
-        x: 50,
-        y: height - 150,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Hash do Documento: ${documentHash}`, {
-        x: 50,
-        y: height - 170,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Data de Assinatura: ${signatureData.date || new Date().toLocaleDateString('pt-BR')}`, {
-        x: 50,
-        y: height - 190,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      // Informações do assinante
-      page.drawText('INFORMAÇÕES DO ASSINANTE', {
-        x: 50,
-        y: height - 230,
-        size: 16,
-        font: boldFont,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Nome: ${signatureData.name || 'Assinatura Digital'}`, {
-        x: 50,
-        y: height - 260,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Motivo: ${signatureData.reason || 'Documento aprovado'}`, {
-        x: 50,
-        y: height - 280,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Local: ${signatureData.location || 'Brasil'}`, {
-        x: 50,
-        y: height - 300,
-        size: 12,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      // QR Code
-      page.drawText('QR CODE PARA VALIDAÇÃO', {
-        x: 50,
-        y: height - 350,
-        size: 16,
-        font: boldFont,
-        color: rgb(0, 0, 0)
-      });
-
-      // Desenhar QR code
-      page.drawImage(qrCodeImage, {
-        x: 50,
-        y: height - 550,
-        width: 150,
-        height: 150
-      });
-
-      // Link de validação
-      page.drawText('LINK DE VALIDAÇÃO', {
-        x: 50,
-        y: height - 580,
-        size: 16,
-        font: boldFont,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(validationURL, {
-        x: 50,
-        y: height - 600,
+      page.drawText('by ZUCCHETTI', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 80,
         size: 10,
         font: font,
-        color: rgb(0, 0, 1) // Azul para indicar link
+        color: rgb(0.3, 0.3, 0.3)
       });
 
-      // Instruções de validação
-      page.drawText('INSTRUÇÕES DE VALIDAÇÃO', {
-        x: 50,
-        y: height - 650,
+      // Logo NTP.br (simulado com texto)
+      page.drawText('ntp.', {
+        x: width - contentMargin - 80,
+        y: height - contentMargin - 60,
+        size: 14,
+        font: boldFont,
+        color: rgb(0.2, 0.6, 0.2)
+      });
+
+      // Círculo verde para o "br"
+      page.drawCircle({
+        x: width - contentMargin - 45,
+        y: height - contentMargin - 60,
+        size: 8,
+        color: rgb(0.2, 0.8, 0.2)
+      });
+
+      page.drawText('br', {
+        x: width - contentMargin - 50,
+        y: height - contentMargin - 65,
+        size: 8,
+        font: boldFont,
+        color: rgb(1, 1, 1)
+      });
+
+      // Informações de sincronização (centralizadas)
+      page.drawText('3 paginas - Datas e horarios baseados em Brasilia, Brasil', {
+        x: width / 2 - 150,
+        y: height - contentMargin - 100,
+        size: 8,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5)
+      });
+
+      page.drawText('Sincronizado com o NTP.br e Observatorio Nacional (ON)', {
+        x: width / 2 - 140,
+        y: height - contentMargin - 115,
+        size: 9,
+        font: boldFont,
+        color: rgb(0.5, 0.5, 0.5)
+      });
+
+      // Título principal
+      page.drawText('Certificado de assinaturas', {
+        x: width / 2 - 120,
+        y: height - contentMargin - 140,
         size: 16,
         font: boldFont,
         color: rgb(0, 0, 0)
       });
 
-      const instructions = [
-        '1. Escaneie o QR code acima com seu smartphone',
-        '2. Ou acesse o link de validação no navegador',
-        '3. Digite a assinatura digital para verificar a autenticidade',
-        '4. O sistema confirmará se o documento é válido e original'
-      ];
-
-      instructions.forEach((instruction, index) => {
-        page.drawText(instruction, {
-          x: 50,
-          y: height - 680 - (index * 20),
-          size: 10,
-          font: font,
-          color: rgb(0.3, 0.3, 0.3)
-        });
-      });
-
-      // Rodapé
-      page.drawText('Este documento foi assinado digitalmente pelo PDF Signer API', {
-        x: width / 2 - 150,
-        y: 30,
+      // Data de geração
+      page.drawText(`gerado em ${formattedDate} de ${currentDate.getFullYear()}, ${formattedTime}`, {
+        x: width / 2 - 140,
+        y: height - contentMargin - 160,
         size: 10,
         font: font,
         color: rgb(0.5, 0.5, 0.5)
+      });
+
+      // Título do documento (sem seção separada, como na imagem)
+      const documentTitle = signatureData.originalFileName || 'Documento PDF';
+      page.drawText(documentTitle, {
+        x: contentMargin + 20,
+        y: height - contentMargin - 200,
+        size: 14,
+        font: boldFont,
+        color: rgb(0.2, 0.2, 0.2)
+      });
+
+      page.drawText(`Codigo do documento ${documentUUID}`, {
+        x: contentMargin + 20,
+        y: height - contentMargin - 220,
+        size: 10,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3)
+      });
+
+      // Seção de assinaturas
+      page.drawText('ASSINATURAS', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 280,
+        size: 12,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      // Assinante
+      const signerName = signatureData.name || 'Assinatura Digital';
+      const signerEmail = signatureData.email || 'assinatura@digital.com';
+
+      page.drawText('Assinante:', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 305,
+        size: 10,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(signerName, {
+        x: contentMargin + 20,
+        y: height - contentMargin - 325,
+        size: 10,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`Email: ${signerEmail}`, {
+        x: contentMargin + 20,
+        y: height - contentMargin - 345,
+        size: 10,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText('Status: Assinou', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 365,
+        size: 10,
+        font: boldFont,
+        color: rgb(0.2, 0.8, 0.2)
+      });
+
+      // Assinatura visual (simulada)
+      page.drawText(signerName, {
+        x: width - contentMargin - 200,
+        y: height - contentMargin - 325,
+        size: 11,
+        font: font,
+        color: rgb(0.6, 0.6, 0.6)
+      });
+
+      // Checkmark verde (simulado com texto)
+      page.drawText('OK', {
+        x: width - contentMargin - 220,
+        y: height - contentMargin - 365,
+        size: 10,
+        font: boldFont,
+        color: rgb(0.2, 0.8, 0.2)
+      });
+
+      // Eventos do documento
+      page.drawText('EVENTOS DO DOCUMENTO', {
+        x: contentMargin + 20,
+        y: height - contentMargin - 400,
+        size: 12,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      // Timeline de eventos
+      const events = [
+        {
+          time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
+          action: `Documento ${documentUUID} criado por ${signerName.toUpperCase()}`,
+          details: `UUID: ${this.generateUUID()} | Email: ${signerEmail}`
+        },
+        {
+          time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
+          action: `Assinaturas iniciadas por ${signerName.toUpperCase()}`,
+          details: `UUID: ${this.generateUUID()} | Email: ${signerEmail}`
+        },
+        {
+          time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
+          action: `${signerName.toUpperCase()} Assinou`,
+          details: `Email: ${signerEmail} | IP: 127.0.0.1 | Geolocalizacao: Brasil`
+        }
+      ];
+
+      let eventY = height - contentMargin - 425;
+      events.forEach((event, index) => {
+        page.drawText(event.time, {
+          x: contentMargin + 20,
+          y: eventY,
+          size: 9,
+          font: boldFont,
+          color: rgb(0, 0, 0)
+        });
+
+        page.drawText(event.action, {
+          x: contentMargin + 20,
+          y: eventY - 15,
+          size: 9,
+          font: font,
+          color: rgb(0, 0, 0)
+        });
+
+        page.drawText(event.details, {
+          x: contentMargin + 20,
+          y: eventY - 30,
+          size: 8,
+          font: font,
+          color: rgb(0.4, 0.4, 0.4)
+        });
+
+        eventY -= 50;
+      });
+
+      // Hash do documento original
+      page.drawText('HASH DO DOCUMENTO ORIGINAL', {
+        x: contentMargin + 20,
+        y: eventY - 20,
+        size: 12,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`SHA256: ${documentHash}`, {
+        x: contentMargin + 20,
+        y: eventY - 40,
+        size: 8,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText(`SHA512: ${this.generateSHA512(documentHash)}`, {
+        x: contentMargin + 20,
+        y: eventY - 55,
+        size: 8,
+        font: font,
+        color: rgb(0, 0, 0)
+      });
+
+      page.drawText('Esse log pertence unica e exclusivamente aos documentos de HASH acima', {
+        x: contentMargin + 20,
+        y: eventY - 75,
+        size: 8,
+        font: font,
+        color: rgb(0.4, 0.4, 0.4)
+      });
+
+      // QR Code no lado direito (alinhado com o título do documento)
+      page.drawImage(qrCodeImage, {
+        x: width - contentMargin - 140,
+        y: height - contentMargin - 240,
+        width: 100,
+        height: 100
+      });
+
+      // Certificação e validade legal
+      page.drawText('CERTIFICACAO E VALIDADE LEGAL', {
+        x: contentMargin + 20,
+        y: contentMargin + 120,
+        size: 12,
+        font: boldFont,
+        color: rgb(0, 0, 0)
+      });
+
+      // Logo ICP Brasil (simulado)
+      page.drawText('ICP Brasil', {
+        x: contentMargin + 20,
+        y: contentMargin + 100,
+        size: 10,
+        font: boldFont,
+        color: rgb(0.2, 0.6, 0.2)
+      });
+
+      const legalTexts = [
+        'Esse documento esta assinado e certificado pelo PDF Signer',
+        'Integridade certificada no padrao ICP-BRASIL',
+        'Assinaturas eletronicas e fisicas tem igual validade legal, conforme MP 2.200-2/2001 e Lei 14.063/2020.'
+      ];
+
+      legalTexts.forEach((text, index) => {
+        page.drawText(text, {
+          x: contentMargin + 20,
+          y: contentMargin + 80 - (index * 15),
+          size: 8,
+          font: font,
+          color: rgb(0, 0, 0)
+        });
       });
 
     } catch (error) {

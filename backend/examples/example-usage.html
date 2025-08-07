@@ -13,69 +13,74 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
+            background: #f8f9fa;
+            color: #495057;
+            padding: 24px;
             text-align: center;
+            border-bottom: 1px solid #e9ecef;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 1em;
+            opacity: 0.7;
         }
 
         .content {
-            padding: 40px;
+            padding: 32px;
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #495057;
+            font-size: 14px;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+            background: #fff;
         }
 
         .form-group input:focus,
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #6c757d;
         }
 
         .file-input-wrapper {
@@ -91,54 +96,57 @@
 
         .file-input-label {
             display: block;
-            padding: 15px;
+            padding: 12px;
             background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
+            border: 1px dashed #ced4da;
+            border-radius: 4px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            color: #6c757d;
         }
 
         .file-input-label:hover {
             background: #e9ecef;
-            border-color: #667eea;
+            border-color: #6c757d;
         }
 
         .file-input-label.dragover {
             background: #e3f2fd;
-            border-color: #2196f3;
+            border-color: #6c757d;
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #6c757d;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: background-color 0.2s ease;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 16px;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
+            background: #5a6268;
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            background: #6c757d;
         }
 
         .status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 4px;
             display: none;
+            font-size: 14px;
         }
 
         .status.success {
@@ -161,24 +169,24 @@
 
         .progress {
             width: 100%;
-            height: 6px;
+            height: 4px;
             background: #e9ecef;
-            border-radius: 3px;
+            border-radius: 2px;
             overflow: hidden;
-            margin-top: 10px;
+            margin-top: 8px;
             display: none;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #6c757d;
             width: 0%;
             transition: width 0.3s ease;
         }
 
         .row {
             display: flex;
-            gap: 20px;
+            gap: 16px;
         }
 
         .col {
@@ -196,7 +204,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📄 PDF Signer</h1>
+            <h1>PDF Signer</h1>
             <p>Assine seus documentos PDF digitalmente</p>
         </div>
 
@@ -207,7 +215,7 @@
                     <div class="file-input-wrapper">
                         <input type="file" id="pdfFile" class="file-input" accept=".pdf" required>
                         <label for="pdfFile" class="file-input-label" id="fileLabel">
-                            📁 Clique aqui ou arraste um arquivo PDF
+                            Clique aqui ou arraste um arquivo PDF
                         </label>
                     </div>
                 </div>
@@ -243,7 +251,7 @@
                 </div>
 
                 <button type="submit" class="btn" id="submitBtn">
-                    🔐 Assinar PDF
+                    Assinar PDF
                 </button>
             </form>
 
@@ -296,9 +304,9 @@
         function updateFileLabel() {
             const file = fileInput.files[0];
             if (file) {
-                fileLabel.textContent = `📄 ${file.name} (${formatFileSize(file.size)})`;
+                fileLabel.textContent = `${file.name} (${formatFileSize(file.size)})`;
             } else {
-                fileLabel.textContent = '📁 Clique aqui ou arraste um arquivo PDF';
+                fileLabel.textContent = 'Clique aqui ou arraste um arquivo PDF';
             }
         }
 
@@ -359,15 +367,15 @@
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
 
-                showStatus('✅ PDF assinado com sucesso! Faça o download do arquivo.', 'success');
+                showStatus('PDF assinado com sucesso! Faça o download do arquivo.', 'success');
 
             } catch (error) {
                 console.error('Erro:', error);
-                showStatus(`❌ Erro: ${error.message}`, 'error');
+                showStatus(`Erro: ${error.message}`, 'error');
             } finally {
                 hideProgress();
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🔐 Assinar PDF';
+                submitBtn.textContent = 'Assinar PDF';
             }
         }
 
@@ -376,12 +384,12 @@
 
             const file = fileInput.files[0];
             if (!file) {
-                showStatus('❌ Por favor, selecione um arquivo PDF.', 'error');
+                showStatus('Por favor, selecione um arquivo PDF.', 'error');
                 return;
             }
 
             if (!file.type.includes('pdf')) {
-                showStatus('❌ Por favor, selecione apenas arquivos PDF.', 'error');
+                showStatus('Por favor, selecione apenas arquivos PDF.', 'error');
                 return;
             }
 
@@ -401,8 +409,8 @@
 
             // Desabilitar botão e mostrar progresso
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Processando...';
-            showStatus('🔄 Enviando arquivo para assinatura...', 'info');
+            submitBtn.textContent = 'Processando...';
+            showStatus('Enviando arquivo para assinatura...', 'info');
 
             // Assinar PDF
             await signPDF(formData);
@@ -413,12 +421,12 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/health`);
                 if (response.ok) {
-                    showStatus('✅ API conectada e funcionando!', 'success');
+                    showStatus('API conectada e funcionando!', 'success');
                 } else {
-                    showStatus('⚠️ API não está respondendo corretamente.', 'error');
+                    showStatus('API não está respondendo corretamente.', 'error');
                 }
             } catch (error) {
-                showStatus('❌ Não foi possível conectar com a API. Certifique-se de que o servidor está rodando.', 'error');
+                showStatus('Não foi possível conectar com a API. Certifique-se de que o servidor está rodando.', 'error');
             }
         }
 
