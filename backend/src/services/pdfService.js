@@ -311,8 +311,9 @@ class PDFService {
 
       // Cabeçalho
       // Logo D4Sign (simulado com texto)
-      // load /home/adao/Documents/signjs/backend/logo.png
-      const logoImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/logo.png'));
+      // load ./backend/src/logo.png
+
+      const logoImage = await pdfDoc.embedPng(fsSync.readFileSync(path.join(__dirname, '..', '..', 'logo.png')));
       page.drawImage(logoImage, {
         x: contentMargin + 20,
         y: height - contentMargin - 70,
@@ -330,7 +331,7 @@ class PDFService {
       // });
 
       // load /home/adao/Documents/signjs/backend/sobre.png
-      const sobreImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/sobre.png'));
+      const sobreImage = await pdfDoc.embedPng(fsSync.readFileSync(path.join(__dirname, '..', '..', 'sobre.png')));
       page.drawImage(sobreImage, {
         x: width / 2 + 190,
         y: height - contentMargin - 65,
@@ -433,19 +434,19 @@ class PDFService {
         {
           name: 'Adão Carlos Nascimento dos Santos',
           email: 'adaosantos@gmail.com',
-          rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
+          rubricaImgPath: path.join(__dirname, '..', '..', 'rubrica.png')
         },
         {
           name: 'Elisha Fanny Rezende dos Santos',
           email: 'elishafanny@gmail.com',
-          rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
+          rubricaImgPath: path.join(__dirname, '..', '..', 'rubrica.png')
         }
       ];
 
       let currentY = height - contentMargin - 235;
 
       // Carregar a imagem OK uma vez fora do loop
-      const okImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/ok.png'));
+      const okImage = await pdfDoc.embedPng(fsSync.readFileSync(path.join(__dirname, '..', '..', 'ok.png')));
 
       for (let index = 0; index < assinaturas.length; index++) {
         const assinatura = assinaturas[index];
@@ -651,7 +652,7 @@ class PDFService {
       });
 
       //LOGO ICP brasil
-      const icpLogo = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/ICP.png'));
+      const icpLogo = await pdfDoc.embedPng(fsSync.readFileSync(path.join(__dirname, '..', '..', 'ICP.png')));
 
       page.drawImage(icpLogo, {
         x: contentMargin + 5,
