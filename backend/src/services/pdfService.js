@@ -1,5 +1,6 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
@@ -277,23 +278,8 @@ class PDFService {
         second: '2-digit'
       });
 
-      // Borda verde padronizada (simulando o padrão D4Sign)
-      const borderWidth = 15;
-      const borderColor = rgb(0.2, 0.6, 0.2);
-
-      // Borda externa
-      page.drawRectangle({
-        x: borderWidth,
-        y: borderWidth,
-        width: width - (borderWidth * 2),
-        height: height - (borderWidth * 2),
-        borderWidth: borderWidth,
-        borderColor: borderColor,
-        color: rgb(1, 1, 1)
-      });
-
       // Área de conteúdo interna
-      const contentMargin = 30;
+      const contentMargin = 10;
       page.drawRectangle({
         x: contentMargin,
         y: contentMargin,
@@ -306,192 +292,221 @@ class PDFService {
 
       // Cabeçalho
       // Logo D4Sign (simulado com texto)
-      page.drawText('D4Sign', {
+      // load /home/adao/Documents/signjs/backend/logo.png
+      const logoImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/logo.png'));
+      page.drawImage(logoImage, {
         x: contentMargin + 20,
-        y: height - contentMargin - 60,
-        size: 16,
-        font: boldFont,
-        color: rgb(0, 0, 0)
+        y: height - contentMargin - 70,
+        width: 60,
+        height: 60
       });
 
-      page.drawText('by ZUCCHETTI', {
-        x: contentMargin + 20,
-        y: height - contentMargin - 80,
-        size: 10,
-        font: font,
-        color: rgb(0.3, 0.3, 0.3)
-      });
 
-      // Logo NTP.br (simulado com texto)
-      page.drawText('ntp.', {
-        x: width - contentMargin - 80,
-        y: height - contentMargin - 60,
-        size: 14,
-        font: boldFont,
-        color: rgb(0.2, 0.6, 0.2)
-      });
+      // page.drawText('by ZUCCHETTI', {
+      //   x: contentMargin + 20,
+      //   y: height - contentMargin - 45,
+      //   size: 10,
+      //   font: font,
+      //   color: rgb(0.3, 0.3, 0.3)
+      // });
 
-      // Círculo verde para o "br"
-      page.drawCircle({
-        x: width - contentMargin - 45,
-        y: height - contentMargin - 60,
-        size: 8,
-        color: rgb(0.2, 0.8, 0.2)
-      });
-
-      page.drawText('br', {
-        x: width - contentMargin - 50,
+      // load /home/adao/Documents/signjs/backend/sobre.png
+      const sobreImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/sobre.png'));
+      page.drawImage(sobreImage, {
+        x: width / 2 + 190,
         y: height - contentMargin - 65,
-        size: 8,
-        font: boldFont,
-        color: rgb(1, 1, 1)
+        width: 60,
+        height: 60
       });
 
       // Informações de sincronização (centralizadas)
       page.drawText('3 paginas - Datas e horarios baseados em Brasilia, Brasil', {
-        x: width / 2 - 150,
-        y: height - contentMargin - 100,
+        x: width / 2 - 100,
+        y: height - contentMargin - 30,
         size: 8,
         font: font,
         color: rgb(0.5, 0.5, 0.5)
       });
 
       page.drawText('Sincronizado com o NTP.br e Observatorio Nacional (ON)', {
-        x: width / 2 - 140,
-        y: height - contentMargin - 115,
+        x: width / 2 - 100,
+        y: height - contentMargin - 40,
         size: 9,
         font: boldFont,
         color: rgb(0.5, 0.5, 0.5)
       });
 
-      // Título principal
-      page.drawText('Certificado de assinaturas', {
-        x: width / 2 - 120,
-        y: height - contentMargin - 140,
-        size: 16,
-        font: boldFont,
-        color: rgb(0, 0, 0)
-      });
+      // // Título principal
+      // page.drawText('Certificado de assinaturas', {
+      //   x: width / 2 - 100,
+      //   y: height - contentMargin - 60,
+      //   size: 16,
+      //   font: boldFont,
+      //   color: rgb(0, 0, 0)
+      // });
 
       // Data de geração
-      page.drawText(`gerado em ${formattedDate} de ${currentDate.getFullYear()}, ${formattedTime}`, {
-        x: width / 2 - 140,
-        y: height - contentMargin - 160,
+      page.drawText(`Gerado em ${formattedDate} de ${currentDate.getFullYear()}, ${formattedTime}`, {
+        x: width / 2 - 100,
+        y: height - contentMargin - 50,
         size: 10,
         font: font,
         color: rgb(0.5, 0.5, 0.5)
       });
+      // barra horizontal
+      page.drawLine({
+        start: { x: contentMargin + 20, y: height - contentMargin - 80 },
+        end: { x: width - contentMargin - 20, y: height - contentMargin - 80 },
+        thickness: 2,
+        color: rgb(0.9, 0.9, 0.9)
+      });
+
 
       // Título do documento (sem seção separada, como na imagem)
       const documentTitle = signatureData.originalFileName || 'Documento PDF';
       page.drawText(documentTitle, {
         x: contentMargin + 20,
-        y: height - contentMargin - 200,
-        size: 14,
+        y: height - contentMargin - 135,
+        size: 18,
         font: boldFont,
         color: rgb(0.2, 0.2, 0.2)
       });
 
       page.drawText(`Codigo do documento ${documentUUID}`, {
         x: contentMargin + 20,
-        y: height - contentMargin - 220,
-        size: 10,
+        y: height - contentMargin - 150,
+        size: 12,
         font: font,
         color: rgb(0.3, 0.3, 0.3)
       });
 
+
+      // QR Code no lado direito (alinhado com o título do documento)
+      page.drawImage(qrCodeImage, {
+        x: width / 2 + 190,
+        y: height - contentMargin - 165,
+        width: 70,
+        height: 70
+      });
+
+      // barra horizontal
+      page.drawLine({
+        start: { x: contentMargin + 20, y: height - contentMargin - 185 },
+        end: { x: width - contentMargin - 20, y: height - contentMargin - 185 },
+        thickness: 2,
+        color: rgb(0.9, 0.9, 0.9)
+      });
+
       // Seção de assinaturas
-      page.drawText('ASSINATURAS', {
+      page.drawText('Assinaturas', {
         x: contentMargin + 20,
-        y: height - contentMargin - 280,
-        size: 12,
+        y: height - contentMargin - 210,
+        size: 16,
         font: boldFont,
-        color: rgb(0, 0, 0)
+        color: rgb(0.2, 0.2, 0.2)
       });
 
-      // Assinante
-      const signerName = signatureData.name || 'Assinatura Digital';
-      const signerEmail = signatureData.email || 'assinatura@digital.com';
+      const assinaturas = [
+        {
+          name: 'Assinante 1',
+          email: 'assinatura1@digital.com',
+          rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
+        },
+        {
+          name: 'Assinante 2',
+          email: 'assinatura2@digital.com',
+          rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
+        }
+      ];
 
-      page.drawText('Assinante:', {
+      let currentY = height - contentMargin - 235;
+
+      // Carregar a imagem OK uma vez fora do loop
+      const okImage = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/ok.png'));
+
+      for (let index = 0; index < assinaturas.length; index++) {
+        const assinatura = assinaturas[index];
+        const yPosition = currentY - (index * 50); // 50px de espaço entre cada assinatura
+
+        // Nome do assinante
+        page.drawText(assinatura.name, {
+          x: contentMargin + 70,
+          y: yPosition,
+          size: 12,
+          font: boldFont,
+          color: rgb(0, 0, 0)
+        });
+
+        // Ícone OK
+        page.drawImage(okImage, {
+          x: contentMargin + 30,
+          y: yPosition - 25,
+          width: 30,
+          height: 30
+        });
+
+        // Email do assinante (15px abaixo do nome)
+        page.drawText(assinatura.email, {
+          x: contentMargin + 70,
+          y: yPosition - 15,
+          size: 10,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5)
+        });
+
+        // Data/hora da assinatura (30px abaixo do nome)
+        page.drawText(`Assinado em: ${signatureData.date} às ${formattedTime}`, {
+          x: contentMargin + 70,
+          y: yPosition - 30,
+          size: 9,
+          font: font,
+          color: rgb(0.6, 0.6, 0.6)
+        });
+      }
+
+      // Barra horizontal após as assinaturas
+      const finalY = currentY - (assinaturas.length * 50) - 20; // 20px abaixo da última assinatura
+      page.drawLine({
+        start: { x: contentMargin + 20, y: finalY },
+        end: { x: width - contentMargin - 20, y: finalY },
+        thickness: 2,
+        color: rgb(0.9, 0.9, 0.9)
+      });
+
+      // Eventos do documento (20px abaixo da última assinatura)
+      page.drawText('Registro de eventos', {
         x: contentMargin + 20,
-        y: height - contentMargin - 305,
-        size: 10,
+        y: finalY - 30,
+        size: 16,
         font: boldFont,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(signerName, {
-        x: contentMargin + 20,
-        y: height - contentMargin - 325,
-        size: 10,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText(`Email: ${signerEmail}`, {
-        x: contentMargin + 20,
-        y: height - contentMargin - 345,
-        size: 10,
-        font: font,
-        color: rgb(0, 0, 0)
-      });
-
-      page.drawText('Status: Assinou', {
-        x: contentMargin + 20,
-        y: height - contentMargin - 365,
-        size: 10,
-        font: boldFont,
-        color: rgb(0.2, 0.8, 0.2)
-      });
-
-      // Assinatura visual (simulada)
-      page.drawText(signerName, {
-        x: width - contentMargin - 200,
-        y: height - contentMargin - 325,
-        size: 11,
-        font: font,
-        color: rgb(0.6, 0.6, 0.6)
-      });
-
-      // Checkmark verde (simulado com texto)
-      page.drawText('OK', {
-        x: width - contentMargin - 220,
-        y: height - contentMargin - 365,
-        size: 10,
-        font: boldFont,
-        color: rgb(0.2, 0.8, 0.2)
-      });
-
-      // Eventos do documento
-      page.drawText('EVENTOS DO DOCUMENTO', {
-        x: contentMargin + 20,
-        y: height - contentMargin - 400,
-        size: 12,
-        font: boldFont,
-        color: rgb(0, 0, 0)
+        color: rgb(0.2, 0.2, 0.2)
       });
 
       // Timeline de eventos
       const events = [
         {
           time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
-          action: `Documento ${documentUUID} criado por ${signerName.toUpperCase()}`,
-          details: `UUID: ${this.generateUUID()} | Email: ${signerEmail}`
+          action: `Documento ${documentUUID} criado por ${assinaturas[0].name.toUpperCase()}`,
+          details: `UUID: ${this.generateUUID()} | Email: ${signatureData.email}`
         },
         {
           time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
-          action: `Assinaturas iniciadas por ${signerName.toUpperCase()}`,
-          details: `UUID: ${this.generateUUID()} | Email: ${signerEmail}`
+          action: `Assinaturas iniciadas por ${assinaturas[0].name}`,
+          details: `UUID: ${this.generateUUID()} | Email: ${assinaturas[0].email}`
         },
         {
           time: `${formattedDate} ${currentDate.getFullYear()}, ${formattedTime}`,
-          action: `${signerName.toUpperCase()} Assinou`,
-          details: `Email: ${signerEmail} | IP: 127.0.0.1 | Geolocalizacao: Brasil`
+          action: `${assinaturas[1].name} Assinou`,
+          details: `Email: ${assinaturas[1].email} | IP: 127.0.0.1`,
+          location: {
+            text: 'Sao Paulo, Brasil',
+            coords: '-23.5505,-46.6333', // Coordenadas de São Paulo
+            mapsUrl: 'https://maps.google.com/?q=-23.5505,-46.6333'
+          }
         }
       ];
 
-      let eventY = height - contentMargin - 425;
+      let eventY = finalY - 60;
       events.forEach((event, index) => {
         page.drawText(event.time, {
           x: contentMargin + 20,
@@ -517,16 +532,66 @@ class PDFService {
           color: rgb(0.4, 0.4, 0.4)
         });
 
-        eventY -= 50;
+        // Se tem localização, adicionar hiperlink
+        if (event.location) {
+          const locationText = `Localizacao: ${event.location.text}`;
+          const locationX = contentMargin + 20;
+          const locationY = eventY - 45;
+
+          page.drawText(locationText, {
+            x: locationX,
+            y: locationY,
+            size: 8,
+            font: font,
+            color: rgb(0.2, 0.4, 0.8) // Azul mais escuro para hiperlink
+          });
+
+          // Adicionar hiperlink para Google Maps
+          page.node.addAnnot(
+            pdfDoc.context.obj({
+              Type: 'Annot',
+              Subtype: 'Link',
+              Rect: [
+                locationX,
+                locationY - 3,
+                locationX + (locationText.length * 4.5),
+                locationY + 8
+              ],
+              A: pdfDoc.context.obj({
+                Type: 'Action',
+                S: 'URI',
+                URI: pdfDoc.context.obj(event.location.mapsUrl)
+              }),
+              Border: [0, 0, 1], // Borda azul sutil
+              C: [0.2, 0.4, 0.8], // Cor da borda (RGB: azul)
+              H: 'I' // Highlight quando hover
+            })
+          );
+
+          eventY -= 65; // Espaço extra para localização
+        } else {
+          eventY -= 50; // Espaço normal
+        }
       });
 
+      // barra horizontal
+
+      page.drawLine({
+        start: { x: contentMargin + 20, y: eventY },
+        end: { x: width - contentMargin - 20, y: eventY },
+        thickness: 2,
+        color: rgb(0.9, 0.9, 0.9)
+      });
+
+
+
       // Hash do documento original
-      page.drawText('HASH DO DOCUMENTO ORIGINAL', {
+      page.drawText('Hash do documento original', {
         x: contentMargin + 20,
-        y: eventY - 20,
-        size: 12,
+        y: eventY - 30,
+        size: 10,
         font: boldFont,
-        color: rgb(0, 0, 0)
+        color: rgb(0.2, 0.2, 0.2)
       });
 
       page.drawText(`SHA256: ${documentHash}`, {
@@ -539,26 +604,28 @@ class PDFService {
 
       page.drawText(`SHA512: ${this.generateSHA512(documentHash)}`, {
         x: contentMargin + 20,
-        y: eventY - 55,
+        y: eventY - 50,
         size: 8,
         font: font,
         color: rgb(0, 0, 0)
       });
 
-      page.drawText('Esse log pertence unica e exclusivamente aos documentos de HASH acima', {
+      page.drawText('Esse log pertence unica e exclusivamente aos documentos de hash acima', {
         x: contentMargin + 20,
         y: eventY - 75,
-        size: 8,
+        size: 14,
         font: font,
         color: rgb(0.4, 0.4, 0.4)
       });
 
-      // QR Code no lado direito (alinhado com o título do documento)
-      page.drawImage(qrCodeImage, {
-        x: width - contentMargin - 140,
-        y: height - contentMargin - 240,
-        width: 100,
-        height: 100
+      //LOGO ICP brasil
+      const icpLogo = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/ICP.png'));
+
+      page.drawImage(icpLogo, {
+        x: contentMargin + 30,
+        y: eventY - 90,
+        width: 30,
+        height: 30
       });
 
       // Certificação e validade legal
