@@ -56,7 +56,9 @@ class PDFService {
       };
 
       // Carregar fontes personalizadas
-      const calibriFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts', 'Calibri.ttf'));
+      const calibriFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/WeezerFont', 'weezerfont.ttf'));
+      const centuryGothicFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/SansSerifFLF', 'SansSerifFLF-Demibold.otf'));
+      const boldFont = await pdfDoc.embedFont(centuryGothicFontBytes); // Usando Century Gothic como "bold"
       const font = await pdfDoc.embedFont(calibriFontBytes);
 
       // Processar cada página
@@ -67,24 +69,30 @@ class PDFService {
         const signatureX = 20; // Margem esquerda
         const signatureY = 30; // Próximo ao final da página
 
-        // Adicionar assinatura digital URL-safe em todas as páginas
-        page.drawText(`Assinatura Digital: ${digitalSignature}`, {
-          x: signatureX,
-          y: signatureY,
+        // Assinatura digital
+        page.drawText(`FluentSign: ${digitalSignature}`, {
+          x: 20,
+          y: 15,
           size: 9,
           font: font,
           color: rgb(0.3, 0.3, 0.3)
         });
+        page.drawText(`Documento assinado eletronicamente, conforme MP 2.200-2/01, Art. 10º, §2. Brasil ICP-BRASIL`, {
+          x: 20,
+          y: 5,
+          size: 8,
+          font: boldFont,
+          color: rgb(0.3, 0.3, 0.3)
+        });
 
-        // Adicionar informações da página
-        page.drawText(`Pagina ${pageIndex + 1} de ${pages.length}`, {
-          x: signatureX,
-          y: signatureY - 15,
+        // Adicionar informações da página (canto inferior direito)
+        page.drawText(`P. ${pageIndex + 1}/${pages.length}`, {
+          x: width - 40, // margem direita da página
+          y: 8,
           size: 7,
           font: font,
           color: rgb(0.5, 0.5, 0.5)
         });
-
         // Se for a primeira página, adicionar informações completas da assinatura
         if (pageIndex === 0) {
           // Criar retângulo de fundo para a assinatura principal
@@ -330,8 +338,12 @@ class PDFService {
         height: 60
       });
 
+      // Calcular número total de páginas (páginas originais + página de validação)
+      const totalPages = pdfDoc.getPages().length;
+      const currentPageNumber = totalPages; // Esta é a última página (validação)
+
       // Informações de sincronização (centralizadas)
-      page.drawText('3 paginas - Datas e horarios baseados em Brasilia, Brasil', {
+      page.drawText(`${totalPages} paginas - Datas e horarios baseados em Brasilia, Brasil`, {
         x: width / 2 - 150,
         y: height - contentMargin - 30,
         size: 12,
@@ -419,13 +431,13 @@ class PDFService {
 
       const assinaturas = [
         {
-          name: 'Assinante 1',
-          email: 'assinatura1@digital.com',
+          name: 'Adão Carlos Nascimento dos Santos',
+          email: 'adaosantos@gmail.com',
           rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
         },
         {
-          name: 'Assinante 2',
-          email: 'assinatura2@digital.com',
+          name: 'Elisha Fanny Rezende dos Santos',
+          email: 'elishafanny@gmail.com',
           rubricaImgPath: '/home/adao/Documents/signjs/backend/rubrica.png'
         }
       ];
@@ -600,7 +612,7 @@ class PDFService {
       page.drawText('Hash do documento original', {
         x: contentMargin + 20,
         y: eventY - 30,
-        size: 10,
+        size: 12,
         font: boldFont,
         color: rgb(0.2, 0.2, 0.2)
       });
@@ -608,7 +620,7 @@ class PDFService {
       page.drawText(`SHA256: ${documentHash}`, {
         x: contentMargin + 20,
         y: eventY - 40,
-        size: 8,
+        size: 6,
         font: font,
         color: rgb(0, 0, 0)
       });
@@ -616,7 +628,7 @@ class PDFService {
       page.drawText(`SHA512: ${this.generateSHA512(documentHash)}`, {
         x: contentMargin + 20,
         y: eventY - 50,
-        size: 8,
+        size: 6,
         font: font,
         color: rgb(0, 0, 0)
       });
@@ -651,14 +663,14 @@ class PDFService {
       // Certificação e validade legal
       page.drawText('Este documento esta assinado e certificado pela FluentSign', {
         x: contentMargin + 70,
-        y: eventY - 110,
+        y: eventY - 100,
         size: 12,
         font: boldFont,
         color: rgb(0, 0, 0)
       });
       page.drawText('Integridade certificada no padrao ICP-BRASIL', {
         x: contentMargin + 70,
-        y: eventY - 125,
+        y: eventY - 115,
         size: 12,
         font: font,
         color: rgb(0, 0, 0)
@@ -673,12 +685,22 @@ class PDFService {
       legalText.forEach((line, index) => {
         page.drawText(line, {
           x: contentMargin + 70,
-          y: eventY - 140 - (index * 15), // 15px entre cada linha
+          y: eventY - 130 - (index * 15), // 15px entre cada linha
           size: 12,
           font: font,
           color: rgb(0, 0, 0)
         });
       });
+
+      // NÚMERO DA PÁGINA (canto inferior direito) - Página de validação
+      page.drawText(`P. ${currentPageNumber}/${totalPages}`, {
+        x: width - 50,
+        y: 5,
+        size: 8,
+        font: font,
+        color: rgb(0.9, 0.3, 0.3)
+      });
+
     } catch (error) {
       console.error('Erro ao adicionar página de validação:', error);
       throw new Error(`Falha ao criar página de validação: ${error.message}`);
@@ -853,15 +875,6 @@ class PDFService {
         size: 8,
         font: boldFont,
         color: rgb(0.3, 0.3, 0.3)
-      });
-
-      //NUMERO DA PAGINA
-      page.drawText(`P. 1/3`, {
-        x: width - 50,
-        y: 5,
-        size: 8,
-        font: font,
-        color: rgb(0.9, 0.3, 0.3)
       });
 
 
