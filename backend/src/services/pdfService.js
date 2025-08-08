@@ -1,4 +1,5 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const fontkit = require('fontkit');
 const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
@@ -23,6 +24,9 @@ class PDFService {
 
       // Carregar o documento PDF
       const pdfDoc = await PDFDocument.load(pdfBytes);
+
+      // Registrar fontkit para fontes personalizadas
+      pdfDoc.registerFontkit(fontkit);
 
       // Obter todas as páginas
       const pages = pdfDoc.getPages();
@@ -51,8 +55,9 @@ class PDFService {
         email: signatureData.email || 'assinatura@digital.com'
       };
 
-      // Adicionar fonte
-      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+      // Carregar fontes personalizadas
+      const calibriFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts', 'Calibri.ttf'));
+      const font = await pdfDoc.embedFont(calibriFontBytes);
 
       // Processar cada página
       pages.forEach((page, pageIndex) => {
@@ -253,9 +258,15 @@ class PDFService {
       const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
       const { width, height } = page.getSize();
 
-      // Carregar fontes - usando Times para ser mais semelhante ao D4Sign
-      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+      // Registrar fontkit para fontes personalizadas
+      pdfDoc.registerFontkit(fontkit);
+
+      // Carregar fontes personalizadas da pasta fonts/
+      const calibriFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/WeezerFont', 'weezerfont.ttf'));
+      const centuryGothicFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/SansSerifFLF', 'SansSerifFLF-Demibold.otf'));
+
+      const font = await pdfDoc.embedFont(calibriFontBytes);
+      const boldFont = await pdfDoc.embedFont(centuryGothicFontBytes); // Usando Century Gothic como "bold"
 
       // Gerar URL de validação
       const validationURL = this.generateValidationURL(digitalSignature, documentHash);
@@ -321,17 +332,17 @@ class PDFService {
 
       // Informações de sincronização (centralizadas)
       page.drawText('3 paginas - Datas e horarios baseados em Brasilia, Brasil', {
-        x: width / 2 - 100,
+        x: width / 2 - 150,
         y: height - contentMargin - 30,
-        size: 8,
+        size: 12,
         font: font,
         color: rgb(0.5, 0.5, 0.5)
       });
 
       page.drawText('Sincronizado com o NTP.br e Observatorio Nacional (ON)', {
-        x: width / 2 - 100,
+        x: width / 2 - 150,
         y: height - contentMargin - 40,
-        size: 9,
+        size: 12,
         font: boldFont,
         color: rgb(0.5, 0.5, 0.5)
       });
@@ -347,7 +358,7 @@ class PDFService {
 
       // Data de geração
       page.drawText(`Gerado em ${formattedDate} de ${currentDate.getFullYear()}, ${formattedTime}`, {
-        x: width / 2 - 100,
+        x: width / 2 - 150,
         y: height - contentMargin - 50,
         size: 10,
         font: font,
@@ -618,50 +629,56 @@ class PDFService {
         color: rgb(0.4, 0.4, 0.4)
       });
 
+      // barra horizontal
+
+      page.drawLine({
+        start: { x: contentMargin + 20, y: eventY - 85 },
+        end: { x: width - contentMargin - 20, y: eventY - 85 },
+        thickness: 2,
+        color: rgb(0.9, 0.9, 0.9)
+      });
+
       //LOGO ICP brasil
       const icpLogo = await pdfDoc.embedPng(fsSync.readFileSync('/home/adao/Documents/signjs/backend/ICP.png'));
 
       page.drawImage(icpLogo, {
-        x: contentMargin + 30,
-        y: eventY - 90,
-        width: 30,
-        height: 30
+        x: contentMargin + 5,
+        y: eventY - 150,
+        width: 70,
+        height: 52
       });
 
       // Certificação e validade legal
-      page.drawText('CERTIFICACAO E VALIDADE LEGAL', {
-        x: contentMargin + 20,
-        y: contentMargin + 120,
+      page.drawText('Este documento esta assinado e certificado pela FluentSign', {
+        x: contentMargin + 70,
+        y: eventY - 110,
         size: 12,
         font: boldFont,
         color: rgb(0, 0, 0)
       });
-
-      // Logo ICP Brasil (simulado)
-      page.drawText('ICP Brasil', {
-        x: contentMargin + 20,
-        y: contentMargin + 100,
-        size: 10,
-        font: boldFont,
-        color: rgb(0.2, 0.6, 0.2)
+      page.drawText('Integridade certificada no padrao ICP-BRASIL', {
+        x: contentMargin + 70,
+        y: eventY - 125,
+        size: 12,
+        font: font,
+        color: rgb(0, 0, 0)
       });
 
-      const legalTexts = [
-        'Esse documento esta assinado e certificado pelo PDF Signer',
-        'Integridade certificada no padrao ICP-BRASIL',
-        'Assinaturas eletronicas e fisicas tem igual validade legal, conforme MP 2.200-2/2001 e Lei 14.063/2020.'
+      // Texto legal dividido em múltiplas linhas
+      const legalText = [
+        'Assinaturas eletronicas e fisicas tem igual validade legal,',
+        'conforme MP 2.200-2/2001 e Lei 14.063/2020.'
       ];
 
-      legalTexts.forEach((text, index) => {
-        page.drawText(text, {
-          x: contentMargin + 20,
-          y: contentMargin + 80 - (index * 15),
-          size: 8,
+      legalText.forEach((line, index) => {
+        page.drawText(line, {
+          x: contentMargin + 70,
+          y: eventY - 140 - (index * 15), // 15px entre cada linha
+          size: 12,
           font: font,
           color: rgb(0, 0, 0)
         });
       });
-
     } catch (error) {
       console.error('Erro ao adicionar página de validação:', error);
       throw new Error(`Falha ao criar página de validação: ${error.message}`);
@@ -716,13 +733,19 @@ class PDFService {
       // Criar novo documento PDF
       const pdfDoc = await PDFDocument.create();
 
+      // Registrar fontkit para fontes personalizadas
+      pdfDoc.registerFontkit(fontkit);
+
       // Criar página A4
       const page = pdfDoc.addPage([595.28, 841.89]);
       const { width, height } = page.getSize();
 
-      // Carregar fontes
-      const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+      // Carregar fontes personalizadas da pasta fonts/
+      const calibriFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/WeezerFont', 'weezerfont.ttf'));
+      const centuryGothicFontBytes = fsSync.readFileSync(path.join(__dirname, '..', 'fonts/SansSerifFLF', 'SansSerifFLF-Demibold.otf'));
+
+      const font = await pdfDoc.embedFont(calibriFontBytes);
+      const boldFont = await pdfDoc.embedFont(centuryGothicFontBytes);
 
       // Gerar assinatura digital
       const digitalSignature = this.generateURLSafeSignature(32);
@@ -817,13 +840,30 @@ class PDFService {
       });
 
       // Assinatura digital
-      page.drawText(`Assinatura Digital: ${digitalSignature}`, {
+      page.drawText(`FluentSign: ${digitalSignature}`, {
         x: 20,
-        y: 30,
+        y: 15,
         size: 9,
         font: font,
         color: rgb(0.3, 0.3, 0.3)
       });
+      page.drawText(`Documento assinado eletronicamente, conforme MP 2.200-2/01, Art. 10º, §2. Brasil ICP-BRASIL`, {
+        x: 20,
+        y: 5,
+        size: 8,
+        font: boldFont,
+        color: rgb(0.3, 0.3, 0.3)
+      });
+
+      //NUMERO DA PAGINA
+      page.drawText(`P. 1/3`, {
+        x: width - 50,
+        y: 5,
+        size: 8,
+        font: font,
+        color: rgb(0.9, 0.3, 0.3)
+      });
+
 
       // Adicionar página de validação
       await this.addValidationPage(pdfDoc, defaultSignature, digitalSignature, documentHash);
